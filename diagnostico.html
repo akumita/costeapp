@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<!--
+  CosteApp · Diagnóstico de instalación
+  Abrir: https://TU-USUARIO.github.io/costeapp/diagnostico.html
+  Desarrollado por AkumaNet. Autor: Juan Carlos Ojeda Huanca. Todos los derechos reservados.
+-->
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CosteApp · Diagnóstico</title>
+  <meta name="theme-color" content="#1e3a8a">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <style>
+    body { margin: 0; background: #0e1218; color: #f1f5f9; font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+    main { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 22px; margin: 0; }
+    .by { color: #8fb0ff; font-weight: 600; font-size: 13px; }
+    ul { list-style: none; padding: 0; margin: 20px 0; display: grid; gap: 8px; }
+    li { background: #161b23; border: 1px solid #2a3240; border-radius: 12px; padding: 10px 12px; }
+    li b { display: block; }
+    li small { color: #94a3b8; display: block; margin-top: 2px; overflow-wrap: anywhere; }
+    .ok b::before { content: '✅ '; } .mal b::before { content: '❌ '; } .aviso b::before { content: '⚠️ '; } .espera b::before { content: '⏳ '; }
+    .resumen { border-radius: 12px; padding: 14px; font-weight: 600; }
+    .resumen.ok { background: rgba(22, 163, 74, .18); } .resumen.mal { background: rgba(229, 57, 53, .18); }
+    button { width: 100%; margin-top: 12px; border: 0; border-radius: 12px; padding: 14px; font: 600 16px system-ui, sans-serif; background: #1e40af; color: #fff; }
+    footer { color: #94a3b8; font-size: 12px; margin-top: 24px; text-align: center; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Diagnóstico de instalación</h1>
+  <div class="by">CosteApp by AkumaNet</div>
+  <ul id="lista"></ul>
+  <div id="resumen" class="resumen" hidden></div>
+  <button id="btnInstalar" type="button" hidden>Instalar CosteApp ahora</button>
+  <footer>Desarrollado por AkumaNet · Autor: Juan Carlos Ojeda Huanca</footer>
+</main>
+<script>
+  var lista = document.getElementById('lista');
+  var problemas = 0;
+  function item(estado, titulo, detalle) {
+    var li = document.createElement('li');
+    li.className = estado;
+    li.innerHTML = '<b></b><small></small>';
+    li.querySelector('b').textContent = titulo;
+    li.querySelector('small').textContent = detalle || '';
+    lista.appendChild(li);
+    if (estado === 'mal') problemas++;
+    return li;
+  }
+  function pedir(url) { return fetch(url, { cache: 'no-store' }); }
+
+  (async function () {
+    var ua = navigator.userAgent;
+    // 1. Dónde está abierta
+    if (location.hostname.indexOf('script.google') >= 0 || location.hostname.indexOf('googleusercontent') >= 0) {
+      item('mal', 'Estás en el link de Apps Script', 'Abrí el link de GitHub (https://TU-USUARIO.github.io/costeapp/). La versión de Apps Script no se puede instalar.');
+    } else {
+      item(location.protocol === 'https:' ? 'ok' : 'mal', 'Dirección segura (https)', location.href);
+    }
+    // 2. Navegador
+    var inApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|; wv\)/i.test(ua);
+    var ios = /iphone|ipad|ipod/i.test(ua);
+    var samsung = /SamsungBrowser/i.test(ua);
+    var chrome = /Chrome\//.test(ua) && !/Edg|OPR|SamsungBrowser/.test(ua);
+    if (inApp) item('mal', 'Abierto dentro de otra app (WhatsApp, Instagram, Facebook…)', 'Tocá los tres puntos ⋮ y elegí "Abrir en Chrome" (o "Abrir en Safari" en iPhone).');
+    else if (ios) item(/Safari/.test(ua) && !/CriOS|FxiOS/.test(ua) ? 'ok' : 'mal', 'iPhone: navegador ' + (/CriOS/.test(ua) ? 'Chrome' : /FxiOS/.test(ua) ? 'Firefox' : 'Safari'),
+      'En iPhone solo se instala desde Safari: botón Compartir ⬆ → "Agregar a inicio".');
+    else if (samsung) item('aviso', 'Navegador Samsung Internet', 'Usá el menú ☰ → "Agregar página a" → "Pantalla de inicio", o abrí el link en Chrome.');
+    else item(chrome ? 'ok' : 'aviso', 'Navegador: ' + (chrome ? 'Chrome' : 'otro'), chrome ? '' : 'Te recomendamos abrir el link en Chrome.');
+    // 3. Ya instalada
+    if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+      item('ok', 'La app ya está instalada', 'Chrome no ofrece instalarla de nuevo. Buscá el ícono de CosteApp en tu pantalla de inicio.');
+    }
+    // 4. Archivos
+    var manifest = null;
+    try {
+      var r = await pedir('manifest.json');
+      if (!r.ok) throw new Error('respondió ' + r.status);
+      manifest = await r.json();
+      item('ok', 'manifest.json encontrado', 'Nombre: ' + manifest.name);
+    } catch (e) {
+      item('mal', 'No se encuentra manifest.json', 'Subilo a GitHub en la misma carpeta que index.html (' + e.message + ').');
+    }
+    if (manifest) {
+      var iconos = manifest.icons || [];
+      for (var i = 0; i < iconos.length; i++) {
+        try {
+          var ri = await pedir(iconos[i].src);
+          item(ri.ok ? 'ok' : 'mal', 'Ícono ' + iconos[i].sizes, ri.ok ? iconos[i].src : 'Falta ' + iconos[i].src + ': subí la carpeta "icons" completa a GitHub.');
+        } catch (e) { item('mal', 'Ícono ' + iconos[i].sizes, 'No se pudo cargar ' + iconos[i].src); }
+      }
+    }
+    try {
+      var ix = await pedir('index.html');
+      var html = await ix.text();
+      if (!ix.ok) throw new Error('respondió ' + ix.status);
+      item(/rel="manifest"/.test(html) ? 'ok' : 'mal', 'index.html enlaza el manifest', '');
+      var m = html.match(/GAS_URL\s*=\s*'([^']*)'/);
+      var url = m ? m[1] : '';
+      if (!url || url.indexOf('PEGAR_AQUI') >= 0) item('mal', 'Falta la dirección de tu app en index.html', 'Editá index.html en GitHub y pegá tu URL que termina en /exec.');
+      else if (/\/dev$/.test(url)) item('mal', 'La dirección termina en /dev', 'Usá la URL que termina en /exec (Implementar → Gestionar implementaciones).');
+      else item(/\/exec$/.test(url) ? 'ok' : 'aviso', 'Dirección de la app configurada', url);
+    } catch (e) { item('mal', 'No se encuentra index.html', e.message); }
+    // 5. Service worker
+    if (!('serviceWorker' in navigator)) {
+      item('aviso', 'El navegador no admite service workers', '');
+    } else {
+      try {
+        await navigator.serviceWorker.register('sw.js');
+        var reg = await Promise.race([navigator.serviceWorker.ready, new Promise(function (res) { setTimeout(res, 6000); })]);
+        item(reg && reg.active ? 'ok' : 'mal', 'Service worker activo', reg && reg.active ? '' : 'Recargá la página una vez. Si sigue, revisá que sw.js esté subido.');
+      } catch (e) { item('mal', 'No se pudo activar el service worker', 'Revisá que sw.js esté subido a GitHub (' + e.message + ').'); }
+    }
+    // 6. Chrome confirma que se puede instalar
+    var estado = item('espera', 'Esperando confirmación de Chrome…', 'Puede tardar unos segundos.');
+    var listo = false;
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault(); listo = true;
+      estado.className = 'ok';
+      estado.querySelector('b').textContent = 'Chrome confirma que la app se puede instalar';
+      estado.querySelector('small').textContent = 'Tocá el botón de abajo.';
+      var b = document.getElementById('btnInstalar');
+      b.hidden = false;
+      b.onclick = function () { e.prompt(); };
+    });
+    setTimeout(function () {
+      if (!listo) {
+        estado.className = 'aviso';
+        estado.querySelector('b').textContent = 'Chrome no confirmó la instalación todavía';
+        estado.querySelector('small').textContent = ios ? 'En iPhone es normal: instalala desde Safari con Compartir → Agregar a inicio.'
+          : 'Si todo lo anterior está en ✅: recargá la página, o usá el menú ⋮ → "Agregar a la pantalla principal". Si ya la instalaste antes, desinstalala y volvé a intentar.';
+      }
+      var res = document.getElementById('resumen');
+      res.hidden = false;
+      res.className = 'resumen ' + (problemas ? 'mal' : 'ok');
+      res.textContent = problemas ? 'Encontramos ' + problemas + ' problema(s). Corregí los que tienen ❌ y volvé a abrir esta página.' : 'Todo está bien configurado.';
+    }, 7000);
+  })();
+</script>
+</body>
+</html>

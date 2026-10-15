@@ -1,0 +1,25 @@
+{
+  "name": "CosteApp by AkumaNet",
+  "short_name": "CosteApp",
+  "description": "Gestión de costos, fórmulas, rentabilidad y pedidos para emprendedores de limpieza, pastelería y comidas. Desarrollado por AkumaNet. Autor: Juan Carlos Ojeda Huanca. Todos los derechos reservados.",
+  "author": "Juan Carlos Ojeda Huanca (AkumaNet)",
+  "id": "./",
+  "lang": "es-AR",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0e1218",
+  "theme_color": "#1e3a8a",
+  "categories": ["business", "productivity", "finance"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Mis pedidos", "short_name": "Pedidos", "url": "./?tab=pedidos", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Mis fórmulas", "short_name": "Fórmulas", "url": "./?tab=formulas", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
